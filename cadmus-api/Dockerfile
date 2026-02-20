@@ -1,10 +1,10 @@
 # Stage 1: Recipes
-FROM lukemathwalker/cargo-chef:latest-rust-1.75.0 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.85.0 AS chef
 WORKDIR /app
 
 # Stage 2: Planner
 FROM chef AS planner
-# Copy everything from the root context
+# Copy everything from the root context to support workspace dependencies
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
