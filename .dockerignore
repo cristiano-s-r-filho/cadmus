@@ -1,0 +1,7 @@
+target/
+cadmus-web/
+.git/
+.github/
+docs/
+node_modules/
+*.log

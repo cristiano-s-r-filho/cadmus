@@ -5,17 +5,20 @@ RUN apt-get update && apt-get install -y build-essential pkg-config && rm -rf /v
 
 # Stage 2: Planner
 FROM chef AS planner
-# Copy everything from the root context to support workspace dependencies
+# Copy only the necessary parts for the API
 COPY . .
+# Remove the web/tauri member from workspace to avoid building its dependencies
+RUN sed -i '/cadmus-web\/src-tauri/d' Cargo.toml
 RUN cargo chef prepare --recipe-path recipe.json
 
 # Stage 3: Builder
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-# Build dependencies
-RUN cargo chef cook --release --recipe-path recipe.json
+# Build dependencies ONLY for the api and its kernel
+RUN cargo chef cook --release --recipe-path recipe.json --bin cadmus-api
 # Build application
 COPY . .
+RUN sed -i '/cadmus-web\/src-tauri/d' Cargo.toml
 RUN cargo build --release --bin cadmus-api
 
 # Stage 4: Runtime
