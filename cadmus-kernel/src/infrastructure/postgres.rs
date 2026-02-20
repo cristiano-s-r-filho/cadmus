@@ -189,11 +189,15 @@ impl DocumentRepository for PostgresDocumentRepository {
     }
 
     async fn update_embedding(&self, doc_id: Uuid, embedding: Vec<f32>) -> anyhow::Result<()> {
-        sqlx::query("UPDATE neural_metadata SET embedding = $1 WHERE document_id = $2")
-            .bind(pgvector::Vector::from(embedding))
-            .bind(doc_id)
-            .execute(&self.pool)
-            .await?;
+        sqlx::query(
+            "INSERT INTO neural_metadata (document_id, embedding) 
+             VALUES ($1, $2) 
+             ON CONFLICT (document_id) DO UPDATE SET embedding = EXCLUDED.embedding"
+        )
+        .bind(doc_id)
+        .bind(pgvector::Vector::from(embedding))
+        .execute(&self.pool)
+        .await?;
         Ok(())
     }
 

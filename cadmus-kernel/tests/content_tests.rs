@@ -45,3 +45,23 @@ async fn test_document_lifecycle() {
     let missing = repo.find_by_id(doc.id).await.expect("Fail");
     assert!(missing.is_none());
 }
+
+#[tokio::test]
+async fn test_embedding_search() {
+    dotenvy::dotenv().ok();
+    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let pool = PgPoolOptions::new().max_connections(1).connect(&db_url).await.expect("Fail");
+    let repo = PostgresDocumentRepository::new(pool.clone());
+    let user_id = Uuid::new_v4();
+
+    sqlx::query("INSERT INTO users (id, username, password_hash) VALUES ($1, $2, $3)").bind(user_id).bind(format!("ai_{}", user_id)).bind("hash").execute(&pool).await.ok();
+
+    let doc = repo.create(user_id, "AI Doc".to_string(), None, None).await.expect("Fail");
+    
+    let vector = vec![0.1; 384]; // 384 dimensions as defined in migration
+    repo.update_embedding(doc.id, vector.clone()).await.expect("Failed to upsert embedding");
+
+    let results = repo.search_similar(vector, 1).await.expect("Search failed");
+    assert_eq!(results.len(), 1);
+    assert_eq!(results[0], doc.id);
+}
