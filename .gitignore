@@ -27,3 +27,4 @@ Thumbs.db
 # Postgres / Redis volume data (if mapped locally)
 postgres_data/
 redis_data/
+.gemini/
