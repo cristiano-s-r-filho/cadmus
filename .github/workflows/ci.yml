@@ -1,0 +1,49 @@
+name: Cadmus CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+      - name: Clippy (Linting)
+        run: cargo clippy -- -D warnings
+      - name: Backend Tests
+        run: cargo test
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: cadmus-web/package-lock.json
+      - name: Install Dependencies
+        working-directory: cadmus-web
+        run: npm install --legacy-peer-deps
+      - name: Linting (ESLint)
+        working-directory: cadmus-web
+        run: npx eslint . --max-warnings 0
+      - name: Security Audit
+        working-directory: cadmus-web
+        run: npm audit --audit-level=high
+      - name: Frontend Tests
+        working-directory: cadmus-web
+        run: npm test
+      - name: Build Check
+        working-directory: cadmus-web
+        run: npm run build

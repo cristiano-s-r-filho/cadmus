@@ -1,0 +1,24 @@
+[package]
+name = "cadmus-api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+cadmus-kernel = { path = "../cadmus-kernel" }
+axum = { version = "0.7", features = ["ws", "multipart"] }
+tokio = { version = "1.0", features = ["full"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "registry", "fmt", "json"] }
+tracing-appender = "0.2"
+tower = { version = "0.4", features = ["util", "limit"] }
+tower-http = { version = "0.5", features = ["cors", "trace", "fs", "limit"] }
+tower_governor = "0.1" # Rate limiting
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+anyhow = "1.0"
+futures = "0.3"
+yrs = "0.17"
+y-sync = "0.4"
+dotenvy = "0.15"

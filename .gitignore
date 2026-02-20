@@ -1,0 +1,29 @@
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node
+node_modules/
+dist/
+.dist/
+cadmus-web/tailwind_generated.css
+
+# IDEs
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Typst
+*.pdf
+
+# Env
+.env
+
+# Postgres / Redis volume data (if mapped locally)
+postgres_data/
+redis_data/

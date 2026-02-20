@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "cadmus-kernel",
+    "cadmus-api",
+    "cadmus-web/src-tauri",
+]
+resolver = "2"

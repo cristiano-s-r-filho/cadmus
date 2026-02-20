@@ -1,0 +1,84 @@
+[[permission]]
+identifier = "allow-get-doc"
+description = "Allows the get_doc command"
+commands.allow = ["get_doc"]
+
+[[permission]]
+identifier = "allow-push-update"
+description = "Allows the push_update command"
+commands.allow = ["push_update"]
+
+[[permission]]
+identifier = "allow-get-updates"
+description = "Allows the get_updates command"
+commands.allow = ["get_updates"]
+
+[[permission]]
+identifier = "allow-get-latest-update"
+description = "Allows the get_latest_update command"
+commands.allow = ["get_latest_update"]
+
+[[permission]]
+identifier = "allow-get-recent-docs"
+description = "Allows the get_recent_docs command"
+commands.allow = ["get_recent_docs"]
+
+[[permission]]
+identifier = "allow-get-all-docs"
+description = "Allows the get_all_docs command"
+commands.allow = ["get_all_docs"]
+
+[[permission]]
+identifier = "allow-create-doc"
+description = "Allows the create_doc command"
+commands.allow = ["create_doc"]
+
+[[permission]]
+identifier = "allow-delete-doc"
+description = "Allows the delete_doc command"
+commands.allow = ["delete_doc"]
+
+[[permission]]
+identifier = "allow-get-archetypes"
+description = "Allows the get_archetypes command"
+commands.allow = ["get_archetypes"]
+
+[[permission]]
+identifier = "allow-get-system-stats"
+description = "Allows the get_system_stats command"
+commands.allow = ["get_system_stats"]
+
+[[permission]]
+identifier = "allow-update-doc-property"
+description = "Allows the update_doc_property command"
+commands.allow = ["update_doc_property"]
+
+[[permission]]
+identifier = "allow-get-collection"
+description = "Allows the get_collection command"
+commands.allow = ["get_collection"]
+
+[[permission]]
+identifier = "allow-update-collection-cell"
+description = "Allows the update_collection_cell command"
+commands.allow = ["update_collection_cell"]
+
+[[permission]]
+identifier = "allow-add-collection-row"
+description = "Allows the add_collection_row command"
+commands.allow = ["add_collection_row"]
+
+[[permission]]
+identifier = "allow-get-tags"
+description = "Allows the get_tags command"
+commands.allow = ["get_tags"]
+
+[[permission]]
+identifier = "allow-get-links"
+description = "Allows the get_links command"
+commands.allow = ["get_links"]
+
+[[permission]]
+identifier = "allow-create-link"
+description = "Allows the create_link command"
+commands.allow = ["create_link"]

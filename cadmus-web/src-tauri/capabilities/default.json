@@ -1,0 +1,35 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "enables the default permissions",
+  "windows": [
+    "main"
+  ],
+  "permissions": [
+    "core:default",
+    "core:path:default",
+    "core:event:default",
+    "core:window:default",
+    "core:app:default",
+    "core:resources:default",
+    "core:menu:default",
+    "core:tray:default",
+    "allow-get-doc",
+    "allow-push-update",
+    "allow-get-updates",
+    "allow-get-latest-update",
+    "allow-get-recent-docs",
+    "allow-get-all-docs",
+    "allow-create-doc",
+    "allow-delete-doc",
+    "allow-get-archetypes",
+    "allow-get-system-stats",
+    "allow-update-doc-property",
+    "allow-get-collection",
+    "allow-update-collection-cell",
+    "allow-add-collection-row",
+    "allow-get-tags",
+    "allow-get-links",
+    "allow-create-link"
+  ]
+}

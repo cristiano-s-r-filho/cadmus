@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* DEFAULT: Ivory Tower (Light) */
+    --bg-base: 253 252 240; /* #FDFCF0 */
+    --bg-surface: 247 246 233; /* #F7F6E9 */
+    --bg-muted: 239 238 224; /* #EFEEE0 */
+    --fg-text: 26 26 26; /* #1A1A1A */
+    --fg-subtext: 92 92 92; /* #5C5C5C */
+    --color-accent: 40 40 40; /* DARK GRAY / BLACK */
+    --color-border: 200 195 180; /* #C8C3B4 */
+    --shadow-hard: 4px 4px 0px rgba(0, 0, 0, 0.15);
+    --font-ui: 'IBM Plex Mono', monospace;
+    --font-content: 'Lora', serif;
+  }
+
+  .theme-pulp {
+    --bg-base: 242 232 201; /* #F2E8C9 */
+    --bg-surface: 235 221 178; /* #EBDDB2 */
+    --bg-muted: 223 208 160; /* #DFD0A0 */
+    --fg-text: 43 45 66; /* #2B2D42 */
+    --fg-subtext: 74 78 105; /* #4A4E69 */
+    --color-accent: 217 4 41; /* #D90429 */
+    --color-border: 141 153 174; /* #8D99AE */
+    --shadow-hard: 6px 6px 0px rgba(43, 45, 66, 0.2);
+  }
+
+  .theme-crt {
+    --bg-base: 13 13 13; /* #0D0D0D */
+    --bg-surface: 26 26 26; /* #1A1A1A */
+    --bg-muted: 38 38 38; /* #262626 */
+    --fg-text: 51 255 51; /* #33FF33 */
+    --fg-subtext: 45 179 45; /* #2DB32D */
+    --color-accent: 51 255 51; /* #33FF33 */
+    --color-border: 31 77 31; /* #1F4D1F */
+    --shadow-hard: 0px 0px 10px rgba(51, 255, 51, 0.2);
+    --font-ui: 'IBM Plex Mono', monospace;
+    --font-content: 'IBM Plex Mono', monospace;
+  }
+
+  .theme-vapor {
+    --bg-base: 18 4 88; /* #120458 */
+    --bg-surface: 27 6 122; /* #1B067A */
+    --bg-muted: 36 8 156; /* #24089C */
+    --fg-text: 0 255 255; /* #00FFFF */
+    --fg-subtext: 255 0 255; /* #FF00FF */
+    --color-accent: 255 0 255; /* #FF00FF */
+    --color-border: 61 12 187; /* #3D0CBB */
+    --shadow-hard: 8px 8px 0px rgba(255, 0, 255, 0.2);
+  }
+
+  body {
+    @apply bg-base text-text transition-colors duration-300 antialiased;
+    font-family: var(--font-ui);
+  }
+}
+
+@layer utilities {
+  .shadow-hard { box-shadow: var(--shadow-hard); }
+  .font-content { font-family: var(--font-content); }
+  .font-ui { font-family: var(--font-ui); }
+  
+  /* Texture Overlays */
+  .paper-texture::before {
+    content: "";
+    @apply fixed inset-0 pointer-events-none z-[100] opacity-[0.03];
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  .scanlines::after {
+    content: "";
+    @apply fixed inset-0 pointer-events-none z-[101] opacity-[0.05];
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 4px, 3px 100%;
+  }
+}
+
+/* Headings */
+.ProseMirror h1 {
+  @apply font-ui text-5xl font-black uppercase tracking-tighter mb-10 border-b-4 border-accent pb-4 mt-12 text-text;
+}
+
+.ProseMirror h2 {
+  @apply font-ui text-3xl font-black uppercase tracking-tight mb-6 mt-10 text-accent;
+}
+
+/* Lists */
+.ProseMirror ul {
+  @apply list-disc list-outside mb-6 space-y-2;
+}
+
+.ProseMirror ol {
+  @apply list-decimal list-outside mb-6 space-y-2;
+}
+
+.ProseMirror li {
+  @apply pl-2 marker:text-accent marker:font-black;
+}
+
+/* Blockquote */
+.ProseMirror blockquote {
+  @apply border-l-4 border-accent bg-muted/20 py-6 px-10 my-8 italic relative shadow-hard;
+}
+
+.ProseMirror blockquote::before {
+  content: "SIGN_QUOTE::";
+  @apply absolute -top-3 left-4 bg-accent text-base text-[8px] font-black uppercase px-2 py-0.5 shadow-sm not-italic;
+}
+
+/* Code Blocks */
+.ProseMirror pre {
+  @apply bg-base border-2 border-border p-8 my-8 overflow-x-auto shadow-hard relative;
+}
+
+.ProseMirror pre::before {
+  content: "CODE_STREAM_0x1";
+  @apply absolute top-0 right-0 bg-border text-base text-[7px] font-black uppercase px-3 py-1;
+}
+
+.ProseMirror pre code {
+  @apply font-ui bg-transparent border-none p-0 text-sm text-text leading-relaxed;
+}
+
+.ProseMirror code {
+  @apply font-ui bg-accent/5 text-accent px-1.5 py-0.5 rounded border border-accent/20 text-xs font-black uppercase tracking-widest;
+}
+
+/* Tables */
+.ProseMirror table {
+  @apply border-collapse border-2 border-border w-full my-12 bg-surface shadow-hard;
+}
+
+.ProseMirror th {
+  @apply border-b-2 border-border bg-muted/30 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-accent text-left;
+}
+
+.ProseMirror td {
+  @apply border-border border px-6 py-4 text-sm font-ui text-text;
+}
+
+.ProseMirror tr:nth-child(even) {
+  @apply bg-base/30;
+}
+
+.ProseMirror .selectedCell:after {
+  @apply bg-accent/10;
+  content: "";
+  left: 0; right: 0; top: 0; bottom: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.ProseMirror .column-resize-handle {
+  @apply bg-accent w-1 absolute top-0 bottom-0 -right-0.5 cursor-col-resize opacity-0 group-hover:opacity-100;
+}
+
+/* Table Footnotes (Simulated via a specific row class if needed, or just last row) */
+.ProseMirror table tr:last-child td {
+  @apply border-t-2 border-border italic text-[10px] text-subtext;
+}
+
+.ProseMirror table tr:last-child td::before {
+  content: "REF::";
+  @apply font-black not-italic mr-2 opacity-40;
+}
+
+/* Tiptap Custom Styles for 80s Paper */
+.ProseMirror {
+  @apply font-content leading-relaxed outline-none min-h-[600px] p-16 max-w-5xl mx-auto;
+}

@@ -1,0 +1,18 @@
+{
+  "experimental": {
+    "skills": true,
+    "codebaseInvestigatorSettings": {
+      "maxNumTurns": 20
+    },
+    "plan": true
+  },
+  "agents": {
+    "overrides": {
+      "codebase_investigator": {
+        "runConfig": {
+          "maxTurns": 20
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@tiptap/extension-mathematics": "^3.19.0",
+    "katex": "^0.16.28"
+  }
+}
