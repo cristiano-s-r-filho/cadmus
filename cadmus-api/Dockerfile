@@ -1,5 +1,5 @@
 # Stage 1: Recipes
-FROM lukemathwalker/cargo-chef:latest-rust-1.85.0 AS chef
+FROM lukemathwalker/cargo-chef:latest-rust-1.91.0 AS chef
 WORKDIR /app
 
 # Stage 2: Planner
