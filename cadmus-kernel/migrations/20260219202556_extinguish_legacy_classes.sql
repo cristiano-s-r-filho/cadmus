@@ -3,4 +3,4 @@
 UPDATE documents SET class_id = 'note' WHERE class_id IN ('blueprint', 'meeting', 'contract', 'finance', 'inventory');
 
 -- 2. Remove the classes from the system registry
-DELETE FROM classes WHERE id IN ('blueprint', 'classes', 'meeting', 'contract', 'finance', 'inventory');
+DELETE FROM classes WHERE id IN ('blueprint', 'meeting', 'contract', 'finance', 'inventory');
