@@ -5,16 +5,18 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { isTauri } from '../../../kernel/tauri_bridge';
 import { invoke } from '@tauri-apps/api/core';
 
+// Use environment variable for WS base URL, fallback for development/Tauri
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://127.0.0.1:3000/api/v1/content/ws/doc';
+
 export function useYjsSync(docId: string) {
   const [status, setStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting');
 
   const { ydoc, provider } = useMemo(() => {
     const ydoc = new Y.Doc();
-    const wsUrl = `ws://127.0.0.1:3000/api/v1/content/ws/doc`;
     
     // Only create provider if we are in browser/cloud mode
     const provider = !isTauri() 
-        ? new WebsocketProvider(wsUrl, docId, ydoc) 
+        ? new WebsocketProvider(WS_URL, docId, ydoc) 
         : null;
     
     // Local persistence (Browser side)

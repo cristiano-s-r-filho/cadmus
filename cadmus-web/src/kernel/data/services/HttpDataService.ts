@@ -1,8 +1,12 @@
 import { IDataService, DocumentMeta, SystemStats, Archetype, CollectionData } from '../IDataService';
 import { getAuthHeaders } from '../authHeaders';
 
+// Use environment variable for API base URL, fallback for development/Tauri
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 export class HttpDataService implements IDataService {
-    private baseUrl = '/api/v1/content/docs';
+    private baseUrl = `${API_BASE_URL}/api/v1/content/docs`;
+    private statsUrl = `${API_BASE_URL}/api/v1/stats`;
 
     async getDoc(docId: string): Promise<DocumentMeta> {
         const res = await fetch(`${this.baseUrl}/${docId}`, { headers: getAuthHeaders() });
@@ -42,7 +46,7 @@ export class HttpDataService implements IDataService {
 
     async getSystemStats(_userId: string): Promise<SystemStats> {
         const headers = getAuthHeaders();
-        const res = await fetch(`/api/v1/stats`, { headers });
+        const res = await fetch(this.statsUrl, { headers });
         if (!res.ok) return { nodes: 0, class_distribution: {}, recent_activity_count: 0, total_links: 0, orphan_nodes: 0, untagged_nodes: 0, integrity: 1 };
         const data = await res.json();
         return {
