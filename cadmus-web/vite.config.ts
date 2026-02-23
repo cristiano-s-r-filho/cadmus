@@ -10,7 +10,7 @@ export default defineConfig({
     topLevelAwait(),
     react(),
     nodePolyfills({
-      include: ['buffer', 'process', 'util', 'events', 'stream'],
+      include: ['buffer', 'process', 'util'],
       globals: {
         Buffer: true,
         global: true,
@@ -19,7 +19,7 @@ export default defineConfig({
     }),
   ],
   define: {
-    // Break circularities and satisfy D3/Mermaid expectations
+    // Satisfy libraries that expect 'global' to be present
     'global': 'globalThis',
   },
   server: {
@@ -43,9 +43,8 @@ export default defineConfig({
     include: ['yjs', 'y-protocols', 'lib0', 'mermaid', 'd3']
   },
   build: {
-    target: 'esnext',
+    target: 'es2020', // More stable target for inheritance patterns
     commonjsOptions: {
-      include: [/node_modules/],
       transformMixedEsModules: true
     },
     rollupOptions: {

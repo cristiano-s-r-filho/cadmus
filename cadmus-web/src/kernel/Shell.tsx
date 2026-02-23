@@ -1,5 +1,9 @@
-import { useState } from 'react';
-import { CollaborativeEditor } from '../features/editor';
+import { useState, lazy, Suspense } from 'react';
+
+// Lazy load the heavy editor to break circular dependencies and improve load time
+const CollaborativeEditor = lazy(() => 
+  import('../features/editor/CollaborativeEditor').then(m => ({ default: m.CollaborativeEditor }))
+);
 
 export function Shell() {
   const [activeDoc, setActiveDoc] = useState('demo-doc');
@@ -59,7 +63,13 @@ export function Shell() {
         
         <main className="flex-1 overflow-auto p-12">
           <div className="max-w-5xl mx-auto bg-base border-2 border-border shadow-hard min-h-full rounded-sm">
-             <CollaborativeEditor key={activeDoc} docId={activeDoc} />
+             <Suspense fallback={
+               <div className="h-full w-full flex items-center justify-center font-black text-[10px] uppercase tracking-[0.3em] opacity-20">
+                 Synchronizing_Neural_Workspace...
+               </div>
+             }>
+                <CollaborativeEditor key={activeDoc} docId={activeDoc} />
+             </Suspense>
           </div>
         </main>
       </div>

@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import mermaid from 'mermaid';
-import { Activity, X, Terminal, ChevronRight, Maximize2 } from 'lucide-react';
+import { Activity, X, Terminal } from 'lucide-react';
 import React from 'react';
-import { clsx } from 'clsx';
 
 interface MermaidWidgetProps {
   code: string;
@@ -11,32 +9,41 @@ interface MermaidWidgetProps {
   readOnly?: boolean;
 }
 
-// Retro-Minimalist Mermaid Theme
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'base',
-  themeVariables: {
-    fontFamily: 'IBM Plex Mono, monospace',
-    primaryColor: '#AF3A03', 
-    primaryTextColor: '#1A1A1A', 
-    primaryBorderColor: '#1A1A1A',
-    lineColor: '#1A1A1A',
-    secondaryColor: '#FDFCF0',
-    tertiaryColor: '#F7F6E9',
-    mainBkg: '#FDFCF0',
-    nodeBorder: '#1A1A1A',
-    clusterBkg: '#F7F6E9',
-    titleColor: '#AF3A03',
-    edgeLabelBackground: '#FDFCF0',
-  }
-});
-
 export function MermaidWidget({ code, onCodeChange, onDelete, readOnly }: MermaidWidgetProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [svg, setSvg] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [mermaid, setMermaid] = useState<any>(null);
+
+  // Lazy Load Mermaid
+  useEffect(() => {
+    import('mermaid').then(m => {
+        const instance = m.default;
+        instance.initialize({
+            startOnLoad: false,
+            theme: 'base',
+            themeVariables: {
+                fontFamily: 'IBM Plex Mono, monospace',
+                primaryColor: '#AF3A03', 
+                primaryTextColor: '#1A1A1A', 
+                primaryBorderColor: '#1A1A1A',
+                lineColor: '#1A1A1A',
+                secondaryColor: '#FDFCF0',
+                tertiaryColor: '#F7F6E9',
+                mainBkg: '#FDFCF0',
+                nodeBorder: '#1A1A1A',
+                clusterBkg: '#F7F6E9',
+                titleColor: '#AF3A03',
+                edgeLabelBackground: '#FDFCF0',
+            }
+        });
+        setMermaid(instance);
+    });
+  }, []);
   
   useEffect(() => {
+    if (!mermaid) return;
+
     const renderDiagram = async () => {
       try {
         const id = `mermaid-${Math.random().toString(36).substr(2, 9)}`;
@@ -48,7 +55,7 @@ export function MermaidWidget({ code, onCodeChange, onDelete, readOnly }: Mermai
       }
     };
     renderDiagram();
-  }, [code]);
+  }, [code, mermaid]);
 
   return (
     <div className="my-10 border border-border bg-surface transition-all hover:border-accent/30 group/mermaid font-ui overflow-hidden">
@@ -80,7 +87,11 @@ export function MermaidWidget({ code, onCodeChange, onDelete, readOnly }: Mermai
 
       {/* Graph Area */}
       <div className="p-8 bg-base/5 flex items-center justify-center relative overflow-hidden min-h-[150px]">
-        {error ? (
+        {!mermaid ? (
+          <div className="animate-pulse text-[8px] font-black uppercase tracking-widest text-subtext">
+            INITIALIZING_KINETIC_CORE...
+          </div>
+        ) : error ? (
           <div className="text-accent text-[8px] font-black uppercase tracking-[0.2em] border border-accent/20 p-4 bg-accent/5">
             {error}
           </div>
