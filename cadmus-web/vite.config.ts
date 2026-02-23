@@ -19,19 +19,14 @@ export default defineConfig({
     }),
   ],
   define: {
-    // Satisfy libraries that expect 'global' to be present
     'global': 'globalThis',
   },
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://127.0.0.1:3000',
-        changeOrigin: true,
-      },
-      '/api/v1/content/ws': {
-        target: 'http://127.0.0.1:3000',
-        ws: true,
-      }
+  build: {
+    target: 'esnext',
+    minify: false, // DISABLE MINIFICATION TO GET READABLE STACK TRACE
+    sourcemap: true,
+    commonjsOptions: {
+      transformMixedEsModules: true
     }
   },
   worker: {
@@ -41,19 +36,5 @@ export default defineConfig({
   optimizeDeps: {
     exclude: ['@automerge/automerge-wasm', '@xenova/transformers'],
     include: ['yjs', 'y-protocols', 'lib0', 'mermaid', 'd3']
-  },
-  build: {
-    target: 'es2020', // More stable target for inheritance patterns
-    commonjsOptions: {
-      transformMixedEsModules: true
-    },
-    rollupOptions: {
-      external: ['onnxruntime-web'],
-      output: {
-        globals: {
-          'onnxruntime-web': 'ort'
-        }
-      }
-    }
   }
 })
