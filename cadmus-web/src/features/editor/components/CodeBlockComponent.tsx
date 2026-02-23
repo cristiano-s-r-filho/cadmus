@@ -42,7 +42,7 @@ export const CodeBlockComponent: React.FC<NodeViewProps> = ({ node: { attrs }, u
       
       {/* Content */}
       <pre className="p-4 font-mono text-sm text-text overflow-x-auto">
-        <NodeViewContent as="code" />
+        <NodeViewContent as="div" />
       </pre>
     </NodeViewWrapper>
   );

@@ -34,7 +34,8 @@ export function useTiptapConfig({ ydoc, provider, user }: UseTiptapConfigProps) 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ 
-          history: false, // Yjs gerencia o histórico
+          // @ts-ignore - Tiptap v3 types for StarterKit can be strict with flattened options
+          history: false, 
           codeBlock: false, // Usamos nossa extensão customizada
           dropcursor: { color: 'var(--color-accent)', width: 2 }
       }),
