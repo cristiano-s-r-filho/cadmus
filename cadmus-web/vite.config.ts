@@ -10,7 +10,7 @@ export default defineConfig({
     topLevelAwait(),
     react(),
     nodePolyfills({
-      include: ['buffer', 'process', 'util'],
+      include: ['buffer', 'process', 'util', 'events', 'stream'],
       globals: {
         Buffer: true,
         global: true,
@@ -19,7 +19,8 @@ export default defineConfig({
     }),
   ],
   define: {
-    // 'global': 'globalThis', // Handled by nodePolyfills
+    // Break circularities and satisfy D3/Mermaid expectations
+    'global': 'globalThis',
   },
   server: {
     proxy: {
@@ -38,17 +39,21 @@ export default defineConfig({
     plugins: () => [wasm(), topLevelAwait()]
   },
   optimizeDeps: {
-    // Exclude these from optimization to prevent double-bundling issues
-    exclude: ['@automerge/automerge-wasm', '@xenova/transformers']
+    exclude: ['@automerge/automerge-wasm', '@xenova/transformers'],
+    include: ['yjs', 'y-protocols', 'lib0', 'mermaid', 'd3']
   },
   build: {
     target: 'esnext',
+    commonjsOptions: {
+      include: [/node_modules/],
+      transformMixedEsModules: true
+    },
     rollupOptions: {
-      // Removed external: ['onnxruntime-web'] to allow bundling or normal resolution
+      external: ['onnxruntime-web'],
       output: {
-        // globals: {
-        //   'onnxruntime-web': 'ort'
-        // }
+        globals: {
+          'onnxruntime-web': 'ort'
+        }
       }
     }
   }
