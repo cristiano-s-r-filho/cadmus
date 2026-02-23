@@ -9,17 +9,17 @@ export default defineConfig({
     wasm(),
     topLevelAwait(),
     react(),
-    // nodePolyfills({
-    //   include: ['buffer', 'process', 'util'],
-    //   globals: {
-    //     Buffer: true,
-    //     global: true,
-    //     process: true,
-    //   },
-    // }),
+    nodePolyfills({
+      include: ['buffer', 'process', 'util'],
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
   ],
   define: {
-    'global': 'globalThis',
+    // 'global': 'globalThis', // Handled by nodePolyfills
   },
   server: {
     proxy: {
@@ -44,11 +44,11 @@ export default defineConfig({
   build: {
     target: 'esnext',
     rollupOptions: {
-      external: ['onnxruntime-web'],
+      // Removed external: ['onnxruntime-web'] to allow bundling or normal resolution
       output: {
-        globals: {
-          'onnxruntime-web': 'ort'
-        }
+        // globals: {
+        //   'onnxruntime-web': 'ort'
+        // }
       }
     }
   }
