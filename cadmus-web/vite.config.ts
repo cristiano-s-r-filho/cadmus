@@ -37,22 +37,20 @@ export default defineConfig({
     format: 'es',
     plugins: () => [wasm(), topLevelAwait()]
   },
-  resolve: {
-    alias: {
-      // Explicitly alias y-protocols to its CommonJS entry to resolve "Missing ." specifier error
-      'y-protocols': path.resolve(__dirname, 'node_modules/y-protocols/dist/index.cjs'),
-    },
-  },
+  // Removed resolve.alias for y-protocols
   optimizeDeps: {
-    exclude: ['@automerge/automerge-wasm', '@xenova/transformers', 'y-protocols'],
-    include: ['yjs', 'lib0', 'mermaid', 'd3']
+    // Exclude @automerge/automerge-wasm and @xenova/transformers
+    exclude: ['@automerge/automerge-wasm', '@xenova/transformers'], 
+    // Explicitly include yjs, y-protocols, lib0, mermaid, d3
+    include: ['yjs', 'y-protocols', 'lib0', 'mermaid', 'd3'] 
   },
   build: {
     target: 'es2020',
     minify: true, // Re-enable minification for production
     sourcemap: false, // Disable sourcemaps for production
     commonjsOptions: {
-      transformMixedEsModules: true
+      transformMixedEsModules: true,
+      include: [/node_modules/, 'y-protocols'] // Explicitly include y-protocols for CommonJS transformation
     },
     rollupOptions: {
       external: ['onnxruntime-web'],
