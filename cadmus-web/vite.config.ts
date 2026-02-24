@@ -11,22 +11,21 @@ export default defineConfig({
     react(),
     nodePolyfills({
       include: ['buffer', 'process', 'util'],
-      globals: {
-        Buffer: true,
-        global: true,
-        process: true,
-      },
     }),
   ],
   define: {
     'global': 'globalThis',
   },
-  build: {
-    target: 'esnext',
-    minify: false, // DISABLE MINIFICATION TO GET READABLE STACK TRACE
-    sourcemap: true,
-    commonjsOptions: {
-      transformMixedEsModules: true
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3000',
+        changeOrigin: true,
+      },
+      '/api/v1/content/ws': {
+        target: 'http://127.0.0.1:3000',
+        ws: true,
+      }
     }
   },
   worker: {
@@ -34,7 +33,23 @@ export default defineConfig({
     plugins: () => [wasm(), topLevelAwait()]
   },
   optimizeDeps: {
-    exclude: ['@automerge/automerge-wasm', '@xenova/transformers'],
-    include: ['yjs', 'y-protocols', 'lib0', 'mermaid', 'd3']
+    exclude: ['@automerge/automerge-wasm', '@xenova/transformers', 'y-protocols'],
+    include: ['yjs', 'lib0', 'mermaid', 'd3']
+  },
+  build: {
+    target: 'es2020',
+    minify: false,
+    sourcemap: true,
+    commonjsOptions: {
+      transformMixedEsModules: true
+    },
+    rollupOptions: {
+      external: ['onnxruntime-web'],
+      output: {
+        globals: {
+          'onnxruntime-web': 'ort'
+        }
+      }
+    }
   }
 })

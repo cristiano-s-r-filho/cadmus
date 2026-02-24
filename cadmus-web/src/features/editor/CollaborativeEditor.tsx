@@ -1,5 +1,5 @@
 import { EditorContent } from '@tiptap/react';
-import { BubbleMenu } from '@tiptap/react/menus';
+import { BubbleMenu } from '@tiptap/extension-bubble-menu';
 import { useEffect, useState, memo, useRef } from 'react';
 import { Button } from '../../design-system';
 import { Table as TableIcon, Rows, Columns, Trash2, ShieldCheck } from 'lucide-react';
