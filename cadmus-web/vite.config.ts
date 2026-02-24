@@ -37,20 +37,17 @@ export default defineConfig({
     format: 'es',
     plugins: () => [wasm(), topLevelAwait()]
   },
-  // Removed resolve.alias for y-protocols
   optimizeDeps: {
-    // Exclude @automerge/automerge-wasm and @xenova/transformers
     exclude: ['@automerge/automerge-wasm', '@xenova/transformers'], 
-    // Explicitly include yjs, y-protocols, lib0, mermaid, d3
     include: ['yjs', 'y-protocols', 'lib0', 'mermaid', 'd3'] 
   },
   build: {
     target: 'es2020',
-    minify: true, // Re-enable minification for production
-    sourcemap: false, // Disable sourcemaps for production
+    minify: false, // DISABLE MINIFICATION FOR DEBUGGING
+    sourcemap: true, // ENABLE SOURCEMAPS FOR DEBUGGING
     commonjsOptions: {
       transformMixedEsModules: true,
-      include: [/node_modules/, 'y-protocols'] // Explicitly include y-protocols for CommonJS transformation
+      include: [/node_modules/, 'y-protocols'] 
     },
     rollupOptions: {
       external: ['onnxruntime-web'],
