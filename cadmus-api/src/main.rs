@@ -17,7 +17,7 @@ async fn main() {
     
     // Configuração de Logging: Inteligente e Legível
     let filter = tracing_subscriber::EnvFilter::from_default_env()
-        .add_directive(tracing::Level::INFO.into());
+        .add_directive(tracing::Level::DEBUG.into()); // Changed INFO to DEBUG
 
     let use_json = std::env::var("LOG_JSON").map(|v| v == "true").unwrap_or(false);
 
