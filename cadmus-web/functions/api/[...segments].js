@@ -1,7 +1,7 @@
 // This Cloudflare Pages Function proxies requests from /api/* to your Render backend.
 export async function onRequest({ request, params }) {
   const backendBaseUrl = 'https://cadmus-kndb.onrender.com'; // Your Render backend URL (hardcoded for now)
-  const apiPath = params.path.join('/'); // Reconstructs the path after /api/
+  const apiPath = params.segments.join('/'); // Reconstructs the path after /api/
 
   // Construct the full URL for the backend
   const url = new URL(`/api/${apiPath}`, backendBaseUrl);
