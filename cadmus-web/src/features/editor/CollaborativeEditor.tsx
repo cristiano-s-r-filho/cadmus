@@ -1,5 +1,4 @@
-import { EditorContent } from '@tiptap/react';
-import { BubbleMenu } from '@tiptap/extension-bubble-menu';
+import { EditorContent, BubbleMenu } from '@tiptap/react';
 import { useEffect, useState, memo, useRef } from 'react';
 import { Button } from '../../design-system';
 import { Table as TableIcon, Rows, Columns, Trash2, ShieldCheck } from 'lucide-react';
@@ -128,7 +127,7 @@ export function CollaborativeEditor({ docId }: { docId: string }) {
       
       {/* Table Bubble Menu */}
       {editor && !editor.isDestroyed && (
-        <BubbleMenu editor={editor} shouldShow={({ editor }: { editor: any }) => editor.isActive('table')}>
+        <BubbleMenu editor={editor} tippyOptions={{ duration: 100, appendTo: 'parent' }} shouldShow={({ editor }: { editor: any }) => editor.isActive('table')}>
           <div className="flex items-center gap-1 p-1 bg-surface border-2 border-accent rounded-sm shadow-hard">
             <button onClick={() => editor.chain().focus().addRowAfter().run()} className="h-8 w-8 flex items-center justify-center hover:bg-accent/10 transition-colors">
                 <Rows className="w-4 h-4" />
