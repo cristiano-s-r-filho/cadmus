@@ -1,14 +1,14 @@
 // This Cloudflare Pages Function proxies requests from /api/* to your Render backend.
-export async function onRequest({ request }) {
+export async function onRequest({ request, params }) { // params is now needed for [[path]]
   console.log('Pages Function: Request received for:', request.url);
   const backendBaseUrl = 'https://cadmus-kndb.onrender.com'; // Your Render backend URL
   
   // Parse the incoming request URL
   const url = new URL(request.url);
   
-  // Extract the path after /api/
-  const apiPath = url.pathname.replace(/^\/api\//, ''); 
-  console.log('Pages Function: Extracted API path:', apiPath);
+  // params.path is an array for [[path]].js catch-all. Handle the case where params.path might be undefined for /api itself
+  const apiPath = params.path && Array.isArray(params.path) ? params.path.join('/') : ''; 
+  console.log('Pages Function: Extracted API path (segments):', apiPath);
 
   // Construct the full URL for the backend
   const targetUrl = new URL(`/api/${apiPath}`, backendBaseUrl);
