@@ -1,4 +1,7 @@
--- Suporte para Governança em Cascata (GAP 5)
+-- Cascade Configuration Support (GAP 5):
+-- This migration introduces a `config` column to the `documents` table, enabling
+-- hierarchical configuration overrides that can cascade from parent documents down to children.
+
 ALTER TABLE documents 
 ADD COLUMN IF NOT EXISTS config JSONB DEFAULT '{}' NOT NULL;
 
