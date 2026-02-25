@@ -1,28 +1,30 @@
-// This Cloudflare Pages Function proxies requests from /api/* to your Render backend.
-export async function onRequest({ request, params }) { // params is now needed for [[path]]
-  console.log('Pages Function: Request received for:', request.url);
-  const backendBaseUrl = 'https://cadmus-kndb.onrender.com'; // Your Render backend URL
+// Cloudflare Pages Function to proxy API requests to the Render backend.
+// This function intercepts all requests to /api/* and forwards them to the
+// specified backend URL, preserving method, headers, and body.
+export async function onRequest({ request, params }) {
+  const backendBaseUrl = 'https://cadmus-kndb.onrender.com'; // Base URL of the Cadmus API on Render.
   
-  // Parse the incoming request URL
+  // Parse the incoming request URL to extract the path.
   const url = new URL(request.url);
   
-  // params.path is an array for [[path]].js catch-all. Handle the case where params.path might be undefined for /api itself
+  // Reconstruct the API path from the params.
+  // For a [[path]].js catch-all, params.path is an array of segments.
+  // Handle the case where params.path might be undefined (e.g., for requests to /api itself).
   const apiPath = params.path && Array.isArray(params.path) ? params.path.join('/') : ''; 
-  console.log('Pages Function: Extracted API path (segments):', apiPath);
 
-  // Construct the full URL for the backend
+  // Construct the full target URL for the Render backend API.
+  // It prepends /api/ to the extracted path segments.
   const targetUrl = new URL(`/api/${apiPath}`, backendBaseUrl);
-  console.log('Pages Function: Target Backend URL:', targetUrl.toString());
 
-  // Create a new request to forward to the backend
+  // Create a new Request object to forward to the backend.
+  // This preserves the original HTTP method, headers, and request body.
   const newRequest = new Request(targetUrl.toString(), {
     method: request.method,
     headers: request.headers,
-    body: request.body, // Pass the original request body
-    redirect: 'follow', // Follow any redirects from the backend
+    body: request.body,
+    redirect: 'follow', // Ensures any redirects from the backend are followed.
   });
-  console.log('Pages Function: Forwarding request with method:', newRequest.method);
 
-  // Fetch the response from the backend and return it
+  // Fetch the response from the Render backend and return it to the client.
   return fetch(newRequest);
 }
