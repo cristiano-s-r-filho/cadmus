@@ -198,7 +198,15 @@ async fn get_stats(AuthenticatedUser(uid): AuthenticatedUser, State(state): Stat
 }
 
 async fn list_archetypes(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>) -> Result<Json<Vec<cadmus_kernel::domain::archetypes::Archetype>>, ApiError> {
-    state.archetypes.find_all().await.map(Json).map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
+    let archetypes = state.archetypes.find_all().await
+        .map_err(|e| {
+            tracing::error!("Failed to fetch archetypes from DB (find_all error): {:?}", e); // More explicit error logging
+            ApiError { error: e.to_string(), code: "DB_ERROR".into() }
+        })?;
+
+    tracing::debug!("Archetypes fetched successfully (before JSON serialization): {:?}", archetypes); // <-- ADD THIS LOGGING
+
+    Ok(Json(archetypes)) // Explicitly return Json
 }
 
 async fn update_property(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Json(req): Json<serde_json::Value>) -> Result<String, ApiError> {
