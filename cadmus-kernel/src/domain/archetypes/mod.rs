@@ -16,7 +16,7 @@ pub struct Archetype {
     pub ui_schema: Value,      
     #[sqlx(default)]
     pub behavior_rules: Value, 
-    #[sqlx(json)] // <--- ADDED THIS LINE
+    // #[sqlx(json)] // <--- REMOVED THIS LINE
     pub allowed_children: Option<Vec<String>>, 
 }
 
