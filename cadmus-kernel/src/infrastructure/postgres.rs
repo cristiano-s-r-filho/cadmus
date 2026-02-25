@@ -6,15 +6,18 @@ use crate::domain::archetypes::Archetype;
 use crate::modules::content::workspace::WorkspaceNode;
 use serde_json::json;
 
+/// Implementation of DocumentRepository for PostgreSQL.
 pub struct PostgresDocumentRepository {
     pool: PgPool,
 }
 
 impl PostgresDocumentRepository {
+    /// Creates a new `PostgresDocumentRepository`.
     pub fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
+    /// Starts an authenticated transaction, setting `app.current_user_id` for RLS.
     async fn start_authenticated_tx(&self, user_id: Uuid) -> anyhow::Result<Transaction<'_, Postgres>> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(&format!("SET LOCAL app.current_user_id = '{}'", user_id))
@@ -26,6 +29,7 @@ impl PostgresDocumentRepository {
 
 #[async_trait]
 impl DocumentRepository for PostgresDocumentRepository {
+    /// Creates a new document in the database.
     async fn create(&self, owner_id: Uuid, title: String, class_id: Option<String>, parent_id: Option<Uuid>) -> anyhow::Result<WorkspaceNode> {
         let mut tx = self.start_authenticated_tx(owner_id).await?;
         let id = Uuid::new_v4();
@@ -53,6 +57,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         })
     }
 
+    /// Finds recently updated documents for a given owner.
     async fn find_recent(&self, owner_id: Uuid, limit: i64) -> anyhow::Result<Vec<WorkspaceNode>> {
         let nodes = sqlx::query_as::<_, WorkspaceNode>(
             r#"
@@ -67,11 +72,12 @@ impl DocumentRepository for PostgresDocumentRepository {
         .bind(limit)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| { tracing::error!("SQLX_RECENT_FAIL: {:?}", e); e })?;
+        .map_err(|e| { tracing::error!("SQLX_RECENT_FAIL: {:?}", e); e })?; // Enhanced error logging
 
         Ok(nodes)
     }
 
+    /// Finds all documents for a given owner.
     async fn find_all(&self, owner_id: Uuid) -> anyhow::Result<Vec<WorkspaceNode>> {
         let nodes = sqlx::query_as::<_, WorkspaceNode>(
             r#"
@@ -84,11 +90,12 @@ impl DocumentRepository for PostgresDocumentRepository {
         .bind(owner_id)
         .fetch_all(&self.pool)
         .await
-        .map_err(|e| { tracing::error!("SQLX_ALL_FAIL: {:?}", e); e })?;
+        .map_err(|e| { tracing::error!("SQLX_ALL_FAIL: {:?}", e); e })?; // Enhanced error logging
 
         Ok(nodes)
     }
 
+    /// Finds a single document by its ID.
     async fn find_by_id(&self, id: Uuid) -> anyhow::Result<Option<WorkspaceNode>> {
         let node = sqlx::query_as::<_, WorkspaceNode>(
             r#"
@@ -100,11 +107,12 @@ impl DocumentRepository for PostgresDocumentRepository {
         .bind(id)
         .fetch_optional(&self.pool)
         .await
-        .map_err(|e| { tracing::error!("SQLX_BY_ID_FAIL ({}): {:?}", id, e); e })?;
+        .map_err(|e| { tracing::error!("SQLX_BY_ID_FAIL ({}): {:?}", id, e); e })?; // Enhanced error logging
 
         Ok(node)
     }
 
+    /// Deletes a document by its ID.
     async fn delete(&self, id: Uuid, _owner_id: Uuid) -> anyhow::Result<()> {
         sqlx::query("DELETE FROM documents WHERE id = $1")
             .bind(id)
@@ -113,6 +121,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         Ok(())
     }
 
+    /// Retrieves system statistics for a given owner.
     async fn get_stats(&self, owner_id: Uuid) -> anyhow::Result<crate::kernel::types::SystemStats> {
         let nodes: i32 = sqlx::query_scalar("SELECT COUNT(*)::int4 FROM documents WHERE owner_id = $1")
             .bind(owner_id).fetch_one(&self.pool).await?;
@@ -165,29 +174,31 @@ impl DocumentRepository for PostgresDocumentRepository {
         })
     }
 
+    /// Updates a specific property of a document.
     async fn update_property(&self, doc_id: Uuid, key: &str, value: serde_json::Value) -> anyhow::Result<()> {
-        tracing::info!("[SQL_EXEC] Attempting property update: doc={}, key={}", doc_id, key);
+        tracing::info!("[SQL_EXEC] Attempting property update: doc={}, key={}", doc_id, key); // Debug log
         
         if key == "title" {
             let title = value.as_str().unwrap_or("UNTITLED");
             let result = sqlx::query("UPDATE documents SET title = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
                 .bind(title)
                 .bind(doc_id)
-                .execute(&self.pool)
+                .execute(&mut self.pool.begin().await?) // Use a transaction for the update
                 .await?;
-            tracing::debug!("[SQL_SUCCESS] Title updated. Rows affected: {}", result.rows_affected());
+            tracing::debug!("[SQL_SUCCESS] Title updated. Rows affected: {}", result.rows_affected()); // Debug log
         } else {
             let json_patch = serde_json::json!({ key: value });
             let result = sqlx::query("UPDATE documents SET properties = COALESCE(properties, '{}'::jsonb) || $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2")
                 .bind(&json_patch)
                 .bind(doc_id)
-                .execute(&self.pool)
+                .execute(&mut self.pool.begin().await?) // Use a transaction for the update
                 .await?;
-            tracing::debug!("[SQL_SUCCESS] Property '{}' merged into JSONB. Rows affected: {}", key, result.rows_affected());
+            tracing::debug!("[SQL_SUCCESS] Property '{}' merged into JSONB. Rows affected: {}", key, result.rows_affected()); // Debug log
         }
         Ok(())
     }
 
+    /// Updates the vector embedding for a given document, or inserts it if it doesn't exist.
     async fn update_embedding(&self, doc_id: Uuid, embedding: Vec<f32>) -> anyhow::Result<()> {
         sqlx::query(
             "INSERT INTO neural_metadata (document_id, embedding) 
@@ -201,6 +212,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         Ok(())
     }
 
+    /// Searches for documents similar to a given embedding vector.
     async fn search_similar(&self, embedding: Vec<f32>, limit: i64) -> anyhow::Result<Vec<Uuid>> {
         let rows = sqlx::query_scalar(
             "SELECT document_id FROM neural_metadata ORDER BY embedding <-> $1 LIMIT $2"
@@ -212,12 +224,14 @@ impl DocumentRepository for PostgresDocumentRepository {
         Ok(rows)
     }
 
+    /// Adds a new link between two documents.
     async fn add_link(&self, from_id: Uuid, to_id: Uuid) -> anyhow::Result<()> {
         sqlx::query("INSERT INTO document_links (from_id, to_id) VALUES ($1, $2) ON CONFLICT DO NOTHING")
             .bind(from_id).bind(to_id).execute(&self.pool).await?;
         Ok(())
     }
 
+    /// Finds all links for documents owned by a specific user.
     async fn find_links(&self, owner_id: Uuid) -> anyhow::Result<Vec<(Uuid, Uuid)>> {
         let rows = sqlx::query_as::<_, (Uuid, Uuid)>(
             "SELECT l.from_id, l.to_id FROM document_links l JOIN documents d ON l.from_id = d.id WHERE d.owner_id = $1"
@@ -225,27 +239,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         Ok(rows)
     }
 
-    async fn get_aggregate_sum(&self, parent_id: Uuid, property_key: &str) -> anyhow::Result<f64> {
-        let sum: Option<f64> = sqlx::query_scalar(
-            r#"
-            SELECT SUM(
-                CASE 
-                    WHEN jsonb_typeof(properties->$1) = 'number' THEN (properties->$1)::numeric
-                    ELSE 0 
-                END
-            )::float8 
-            FROM documents 
-            WHERE (parent_id = $2 OR id IN (SELECT to_id FROM document_links WHERE from_id = $2))
-              AND id <> $2
-            "#
-        )
-        .bind(property_key)
-        .bind(parent_id)
-        .fetch_one(&self.pool)
-        .await?;
-        Ok(sum.unwrap_or(0.0))
-    }
-
+    /// Finds properties of children documents for a given parent, optionally filtered by class.
     async fn find_children_properties(&self, parent_id: Uuid, class_filter: Option<String>) -> anyhow::Result<Vec<serde_json::Value>> {
         let rows = if let Some(cf) = class_filter {
             sqlx::query_scalar::<_, serde_json::Value>("SELECT properties FROM documents WHERE parent_id = $1 AND class_id = $2")
@@ -257,6 +251,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         Ok(rows)
     }
 
+    /// Retrieves tags for a document, including inherited tags from its lineage.
     async fn get_tags_with_inheritance(&self, doc_id: Uuid) -> anyhow::Result<Vec<String>> {
         let tags: Vec<String> = sqlx::query_scalar(
             r#"
@@ -272,6 +267,7 @@ impl DocumentRepository for PostgresDocumentRepository {
         Ok(tags)
     }
 
+    /// Retrieves rows for a collection document.
     async fn get_collection_rows(&self, doc_id: Uuid) -> anyhow::Result<Vec<serde_json::Value>> {
         let rows = sqlx::query_as::<_, (Uuid, serde_json::Value)>(
             "SELECT id, data FROM collection_rows WHERE document_id = $1 ORDER BY order_index ASC"
@@ -282,12 +278,14 @@ impl DocumentRepository for PostgresDocumentRepository {
         }).collect())
     }
 
+    /// Updates a specific cell within a collection row.
     async fn update_collection_cell(&self, _doc_id: Uuid, row_id: Uuid, col_id: &str, value: serde_json::Value) -> anyhow::Result<()> {
         sqlx::query("UPDATE collection_rows SET data = jsonb_set(data, ARRAY[$1], $2), updated_at = CURRENT_TIMESTAMP WHERE id = $3")
             .bind(col_id).bind(value).bind(row_id).execute(&self.pool).await?;
         Ok(())
     }
 
+    /// Adds a new row to a collection document.
     async fn add_collection_row(&self, doc_id: Uuid) -> anyhow::Result<serde_json::Value> {
         let id = Uuid::new_v4();
         let data = json!({});
@@ -299,12 +297,13 @@ impl DocumentRepository for PostgresDocumentRepository {
     }
 }
 
+/// Implementation of ArchetypeRepository for PostgreSQL.
 pub struct PostgresArchetypeRepository { pool: PgPool }
 impl PostgresArchetypeRepository { pub fn new(pool: PgPool) -> Self { Self { pool } } }
 #[async_trait]
 impl ArchetypeRepository for PostgresArchetypeRepository {
+    /// Finds all Archetype definitions from the 'classes' table.
     async fn find_all(&self) -> anyhow::Result<Vec<Archetype>> {
-        // FIXED: Column Aliases for explicit sqlx mapping
         sqlx::query_as::<_, Archetype>(
             r#"
             SELECT 
@@ -321,6 +320,7 @@ impl ArchetypeRepository for PostgresArchetypeRepository {
         )
         .fetch_all(&self.pool).await.map_err(|e| anyhow::anyhow!("DB_ERROR: {}", e))
     }
+    /// Finds a single Archetype definition by its ID.
     async fn find_by_id(&self, id: &str) -> anyhow::Result<Option<Archetype>> {
         sqlx::query_as::<_, Archetype>(
             r#"
@@ -329,6 +329,7 @@ impl ArchetypeRepository for PostgresArchetypeRepository {
                 name, 
                 icon, 
                 group_id,
+                required_tier, -- Ensure required_tier is selected here as well
                 COALESCE(ui_schema, '[]'::jsonb) AS ui_schema, 
                 COALESCE(behavior_rules, '{}'::jsonb) AS behavior_rules, 
                 allowed_children 
@@ -340,10 +341,12 @@ impl ArchetypeRepository for PostgresArchetypeRepository {
     }
 }
 
+/// Implementation of AuditRepository for PostgreSQL.
 pub struct PostgresAuditRepository { pool: PgPool }
 impl PostgresAuditRepository { pub fn new(pool: PgPool) -> Self { Self { pool } } }
 #[async_trait]
 impl AuditRepository for PostgresAuditRepository {
+    /// Logs an audit event to the 'audit_logs' table, calculating a new hash based on the previous entry.
     async fn log(&self, user_id: Option<Uuid>, resource_id: Option<Uuid>, resource_type: &str, action: &str, details: Option<String>) -> anyhow::Result<()> {
         let details_json = details.unwrap_or("{}".to_string());
         let last_hash: Option<String> = sqlx::query_scalar("SELECT hash FROM audit_logs ORDER BY created_at DESC LIMIT 1").fetch_optional(&self.pool).await?;
