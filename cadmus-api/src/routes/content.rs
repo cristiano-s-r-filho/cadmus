@@ -16,6 +16,8 @@ use uuid::Uuid;
 use serde::{Deserialize, Serialize};
 use crate::routes::auth::AuthenticatedUser;
 
+/// Custom API Error structure for consistent error responses.
+/// Includes an error message and a classification code.
 #[derive(Serialize)]
 pub struct ApiError {
     pub error: String,
@@ -35,12 +37,14 @@ impl IntoResponse for ApiError {
     }
 }
 
+/// Defines WebSocket routes for real-time document collaboration.
 pub fn routes(state: Arc<CoreState>) -> Router {
     Router::new()
         .route("/ws/doc/:id", get(ws_handler))
         .with_state(state)
 }
 
+/// Defines document-related API routes.
 pub fn document_routes() -> Router<Arc<CoreState>> {
     Router::new()
         .route("/all", get(list_all))
@@ -66,6 +70,7 @@ pub fn document_routes() -> Router<Arc<CoreState>> {
         .route("/health/db", get(db_health_check)) // New Health Check
 }
 
+/// Retrieves the latest document snapshot for a given document ID.
 async fn get_latest_snapshot_route(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<String>) -> Result<Json<Option<Vec<u8>>>, ApiError> {
     if let Some(storage) = state.registry.get_storage() {
         let snapshot = storage.load_latest_snapshot(&id).await
@@ -76,11 +81,13 @@ async fn get_latest_snapshot_route(_auth: AuthenticatedUser, State(state): State
     }
 }
 
+/// Request payload for saving a document snapshot.
 #[derive(Deserialize)]
 pub struct SnapshotRequest {
     pub data: Vec<u8>,
 }
 
+/// Saves a document snapshot.
 async fn save_snapshot(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<String>, Json(req): Json<SnapshotRequest>) -> Result<String, ApiError> {
     if let Some(storage) = state.registry.get_storage() {
         storage.save_update(&id, req.data).await
@@ -91,6 +98,7 @@ async fn save_snapshot(_auth: AuthenticatedUser, State(state): State<Arc<CoreSta
     }
 }
 
+/// Retrieves the latest document update for a given document ID.
 async fn get_latest_update_route(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<String>) -> Result<Json<Option<Vec<u8>>>, ApiError> {
     if let Some(storage) = state.registry.get_storage() {
         let update = storage.load_latest_update(&id).await
@@ -101,6 +109,7 @@ async fn get_latest_update_route(_auth: AuthenticatedUser, State(state): State<A
     }
 }
 
+/// Retrieves all document updates for a given document ID.
 async fn get_updates_route(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<String>) -> Result<Json<Vec<Vec<u8>>>, ApiError> {
     if let Some(storage) = state.registry.get_storage() {
         let updates = storage.load_updates(&id).await
@@ -111,6 +120,7 @@ async fn get_updates_route(_auth: AuthenticatedUser, State(state): State<Arc<Cor
     }
 }
 
+/// Retrieves a single document by its ID.
 async fn get_doc(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<Uuid>) -> Result<Json<cadmus_kernel::modules::content::workspace::WorkspaceNode>, ApiError> {
     let doc = state.documents.find_by_id(id).await
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })?
@@ -118,53 +128,62 @@ async fn get_doc(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, 
     Ok(Json(doc))
 }
 
+/// Request payload for updating document embeddings.
 #[derive(Deserialize)]
 pub struct EmbeddingRequest {
     pub doc_id: Uuid,
     pub vector: Vec<f32>,
 }
 
+/// Updates the vector embedding for a given document.
 async fn update_embedding(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Json(req): Json<EmbeddingRequest>) -> Result<String, ApiError> {
     state.documents.update_embedding(req.doc_id, req.vector).await
         .map(|_| "VECTOR_SYNCED".into())
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Request payload for searching documents by vector.
 #[derive(Deserialize)]
 pub struct SearchRequest {
     pub vector: Vec<f32>,
 }
 
+/// Searches for documents similar to a given vector.
 async fn search_docs(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Json(req): Json<SearchRequest>) -> Result<Json<Vec<Uuid>>, ApiError> {
     state.documents.search_similar(req.vector, 10).await
         .map(Json)
         .map_err(|e| ApiError { error: e.to_string(), code: "SEARCH_ERROR".into() })
 }
 
+/// Lists all links associated with documents owned by the authenticated user.
 async fn list_links(AuthenticatedUser(uid): AuthenticatedUser, State(state): State<Arc<CoreState>>) -> Result<Json<Vec<(Uuid, Uuid)>>, ApiError> {
     state.documents.find_links(uid).await
         .map(Json)
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Request payload for creating a new document link.
 #[derive(Deserialize)]
 pub struct CreateLinkRequest {
     pub from_id: Uuid,
     pub to_id: Uuid,
 }
 
+/// Creates a new link between two documents.
 async fn create_link(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Json(req): Json<CreateLinkRequest>) -> Result<String, ApiError> {
     state.documents.add_link(req.from_id, req.to_id).await
         .map(|_| "LINK_CREATED".into())
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Retrieves tags associated with a document, including inherited tags.
 async fn get_tags(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<Uuid>) -> Result<Json<Vec<String>>, ApiError> {
     state.documents.get_tags_with_inheritance(id).await
         .map(Json)
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Request payload for creating a new document.
 #[derive(Deserialize)]
 pub struct CreateDocRequest {
     pub title: String,
@@ -172,43 +191,53 @@ pub struct CreateDocRequest {
     pub parent_id: Option<Uuid>,
 }
 
+/// Lists all documents owned by the authenticated user.
 async fn list_all(AuthenticatedUser(uid): AuthenticatedUser, State(state): State<Arc<CoreState>>) -> Result<Json<Vec<cadmus_kernel::modules::content::workspace::WorkspaceNode>>, ApiError> {
     state.documents.find_all(uid).await
         .map(Json)
         .map_err(|e| {
-            tracing::error!("DB_FAIL in list_all: {:?}", e);
+            tracing::error!("DB_FAIL in list_all: {:?}", e); // Explicit error logging for list_all
             ApiError { error: e.to_string(), code: "DB_ERROR".into() }
         })
 }
 
+/// Creates a new document.
 async fn create_doc(AuthenticatedUser(uid): AuthenticatedUser, State(state): State<Arc<CoreState>>, Json(req): Json<CreateDocRequest>) -> Result<Json<cadmus_kernel::modules::content::workspace::WorkspaceNode>, ApiError> {
     state.documents.create(uid, req.title, req.class_id, req.parent_id).await
         .map(Json)
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Deletes a document by its ID.
 async fn delete_doc(AuthenticatedUser(uid): AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<Uuid>) -> Result<String, ApiError> {
-    state.documents.delete(id, uid).await.map(|_| "DELETED".into()).map_err(|e| e.to_string()).map_err(|e| ApiError { error: e, code: "DB_ERROR".into() })
+    state.documents.delete(id, uid).await
+        .map(|_| "DELETED".into())
+        .map_err(|e| ApiError { error: e, code: "DB_ERROR".into() })
 }
 
+/// Retrieves system statistics for the authenticated user.
 async fn get_stats(AuthenticatedUser(uid): AuthenticatedUser, State(state): State<Arc<CoreState>>) -> Result<Json<cadmus_kernel::kernel::types::SystemStats>, ApiError> {
     state.documents.get_stats(uid).await
         .map(Json)
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Lists all available Archetypes.
+///
+/// Fetches Archetype definitions from the database, which represent different
+/// types of documents or entities in the system.
 async fn list_archetypes(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>) -> Result<Json<Vec<cadmus_kernel::domain::archetypes::Archetype>>, ApiError> {
     let archetypes = state.archetypes.find_all().await
         .map_err(|e| {
-            tracing::error!("Failed to fetch archetypes from DB (find_all error): {:?}", e); // More explicit error logging
+            tracing::error!("Failed to fetch archetypes from DB (find_all error): {:?}", e); // Explicit error logging for find_all
             ApiError { error: e.to_string(), code: "DB_ERROR".into() }
         })?;
 
-    tracing::debug!("Archetypes fetched successfully (before JSON serialization): {:?}", archetypes); // <-- ADD THIS LOGGING
-
+    // Debug log removed for production.
     Ok(Json(archetypes)) // Explicitly return Json
 }
 
+/// Updates a specific property of a document.
 async fn update_property(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Json(req): Json<serde_json::Value>) -> Result<String, ApiError> {
     let doc_id = Uuid::parse_str(req["id"].as_str().ok_or("MISSING_ID").map_err(|e| ApiError { error: e.to_string(), code: "VALIDATION_FAIL".into() })?).map_err(|e| ApiError { error: e.to_string(), code: "INVALID_ID".into() })?;
     let key = req["key"].as_str().ok_or("MISSING_KEY").map_err(|e| ApiError { error: e.to_string(), code: "VALIDATION_FAIL".into() })?;
@@ -219,52 +248,66 @@ async fn update_property(_auth: AuthenticatedUser, State(state): State<Arc<CoreS
     Ok("UPDATED".into())
 }
 
+/// Lists recently updated documents for the authenticated user.
 async fn list_recent(AuthenticatedUser(uid): AuthenticatedUser, State(state): State<Arc<CoreState>>) -> Result<Json<Vec<cadmus_kernel::modules::content::workspace::WorkspaceNode>>, ApiError> {
     state.documents.find_recent(uid, 10).await
         .map(Json)
         .map_err(|e| {
-            tracing::error!("DB_FAIL in list_recent: {:?}", e);
+            tracing::error!("DB_FAIL in list_recent: {:?}", e); // Explicit error logging for list_recent
             ApiError { error: e.to_string(), code: "DB_ERROR".into() }
         })
 }
 
+/// Handles WebSocket upgrades for real-time document collaboration.
 async fn ws_handler(ws: WebSocketUpgrade, Path(id): Path<String>, State(state): State<Arc<CoreState>>) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_socket(socket, id, state.registry.clone()))
 }
 
+/// Manages the WebSocket connection for real-time Yjs document synchronization.
+/// This function broadcasts updates and handles incoming messages.
 async fn handle_socket(socket: WebSocket, doc_id: String, registry: Arc<cadmus_kernel::modules::content::socket::ContentRegistry>) {
     let (mut sender, mut receiver) = socket.split();
     let room = registry.get_room(&doc_id).await;
     let mut bcast_rx = room.tx.subscribe();
 
     let (tx, mut rx) = tokio::sync::mpsc::channel(100);
+    // Send initial state vector to new client for synchronization.
     let initial_sv = room.doc.transact().state_vector();
     let _ = tx.send(Message::Binary(YSyncMessage::Sync(SyncMessage::SyncStep1(initial_sv)).encode_v1())).await;
 
+    // Forward messages from our mpsc channel to the websocket.
     let fwd = tokio::spawn(async move { while let Some(m) = rx.recv().await { if sender.send(m).await.is_err() { break; } } });
+    // Broadcast Yjs updates from the document room to our mpsc channel.
     let bcast = tokio::spawn(async move { while let Ok(u) = bcast_rx.recv().await { let _ = tx.send(Message::Binary(YSyncMessage::Sync(SyncMessage::Update(u)).encode_v1())).await; } });
 
+    // Process incoming WebSocket messages (Yjs updates) from the client.
     while let Some(Ok(Message::Binary(data))) = receiver.next().await {
         if let Ok(YSyncMessage::Sync(sm)) = YSyncMessage::decode_v1(&data) {
             match sm {
+                // If client sends SyncStep1, respond with an update.
                 SyncMessage::SyncStep1(sv) => {
                     let upd = room.doc.transact().encode_diff_v1(&sv);
                     let _ = registry.process_update(&doc_id, upd).await;
                 },
+                // Apply incoming Yjs updates to the shared document.
                 SyncMessage::Update(u) => { registry.process_update(&doc_id, u).await; },
-                _ => {}
+                _ => {} // Ignore other sync messages for now.
             }
         }
     }
+    // Abort spawned tasks when the WebSocket connection closes.
     fwd.abort(); bcast.abort();
 }
 
+/// Retrieves rows from a collection document.
 async fn get_collection(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<Uuid>) -> Result<Json<serde_json::Value>, ApiError> {
     let rows = state.documents.get_collection_rows(id).await
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })?;
+    // Returns rows and an empty columns array (columns definition is handled client-side or elsewhere).
     Ok(Json(serde_json::json!({ "rows": rows, "columns": [] })))
 }
 
+/// Request payload for updating a cell in a collection.
 #[derive(Deserialize)]
 pub struct UpdateCellRequest {
     pub row_id: Uuid,
@@ -272,19 +315,21 @@ pub struct UpdateCellRequest {
     pub value: serde_json::Value,
 }
 
+/// Updates a specific cell's value within a collection row.
 async fn update_collection_cell(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<Uuid>, Json(req): Json<UpdateCellRequest>) -> Result<String, ApiError> {
     state.documents.update_collection_cell(id, req.row_id, &req.col_id, req.value).await
         .map(|_| "CELL_UPDATED".into())
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
+/// Adds a new row to a collection document.
 async fn add_collection_row(_auth: AuthenticatedUser, State(state): State<Arc<CoreState>>, Path(id): Path<Uuid>) -> Result<Json<serde_json::Value>, ApiError> {
     state.documents.add_collection_row(id).await
         .map(Json)
         .map_err(|e| ApiError { error: e.to_string(), code: "DB_ERROR".into() })
 }
 
-// Health Check
+/// Health Check endpoint for the database connection.
 async fn db_health_check(State(state): State<Arc<CoreState>>) -> Result<String, ApiError> {
     sqlx::query("SELECT 1").execute(&state.pool).await
         .map(|_| "DB_OK".into())
